@@ -10,6 +10,7 @@
 		45E74AE520558692003ABDC9 /* TextSpeechController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E74AE420558692003ABDC9 /* TextSpeechController.swift */; };
 		631D574F20528D1A001B8434 /* GPUImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 631D574A20528CCE001B8434 /* GPUImage.framework */; };
 		631D575120528D40001B8434 /* GPUImage.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 631D574A20528CCE001B8434 /* GPUImage.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		632F833520BF4A0D00D7F5C6 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 632F833420BF4A0D00D7F5C6 /* CloudKit.framework */; };
 		6379DD70205177C300D6FA7C /* tessdata in Resources */ = {isa = PBXBuildFile; fileRef = 6379DD6F205177C200D6FA7C /* tessdata */; };
 		6379DD722051780200D6FA7C /* libstdc++.6.0.9.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6379DD712051780200D6FA7C /* libstdc++.6.0.9.tbd */; };
 		6379DD742051780B00D6FA7C /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6379DD732051780B00D6FA7C /* CoreImage.framework */; };
@@ -114,6 +115,8 @@
 		41C40D68DC2F2CF534730B08 /* Pods-ReadsomeTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ReadsomeTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ReadsomeTests/Pods-ReadsomeTests.debug.xcconfig"; sourceTree = "<group>"; };
 		45E74AE420558692003ABDC9 /* TextSpeechController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSpeechController.swift; sourceTree = "<group>"; };
 		631D573E20528CCE001B8434 /* GPUImage.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = GPUImage.xcodeproj; path = GPUImage2/GPUImage.xcodeproj; sourceTree = "<group>"; };
+		632F833320BF4A0B00D7F5C6 /* Readsome.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Readsome.entitlements; sourceTree = "<group>"; };
+		632F833420BF4A0D00D7F5C6 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		6379DD6F205177C200D6FA7C /* tessdata */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tessdata; sourceTree = "<group>"; };
 		6379DD712051780200D6FA7C /* libstdc++.6.0.9.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.6.0.9.tbd"; path = "usr/lib/libstdc++.6.0.9.tbd"; sourceTree = SDKROOT; };
 		6379DD732051780B00D6FA7C /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
@@ -166,6 +169,7 @@
 				631D574F20528D1A001B8434 /* GPUImage.framework in Frameworks */,
 				6379DD752051781500D6FA7C /* TesseractOCR.framework in Frameworks */,
 				6379DD742051780B00D6FA7C /* CoreImage.framework in Frameworks */,
+				632F833520BF4A0D00D7F5C6 /* CloudKit.framework in Frameworks */,
 				6379DD722051780200D6FA7C /* libstdc++.6.0.9.tbd in Frameworks */,
 				7374CFC19B36D481C6B9191A /* Pods_Readsome.framework in Frameworks */,
 			);
@@ -206,6 +210,7 @@
 		4FAB19C833F367806E0D025D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				632F833420BF4A0D00D7F5C6 /* CloudKit.framework */,
 				6379DD762051781500D6FA7C /* TesseractOCR.framework */,
 				6379DD732051780B00D6FA7C /* CoreImage.framework */,
 				6379DD712051780200D6FA7C /* libstdc++.6.0.9.tbd */,
@@ -257,6 +262,7 @@
 		D3113855204D56D200DF47AF /* Readsome */ = {
 			isa = PBXGroup;
 			children = (
+				632F833320BF4A0B00D7F5C6 /* Readsome.entitlements */,
 				D3B64B012052707C004A58BB /* ScannedText+CoreDataClass.swift */,
 				D3B64B022052707C004A58BB /* ScannedText+CoreDataProperties.swift */,
 				D3113856204D56D200DF47AF /* AppDelegate.swift */,
@@ -380,7 +386,15 @@
 				TargetAttributes = {
 					D3113852204D56D200DF47AF = {
 						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Automatic;
+						ProvisioningStyle = Manual;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					D3113869204D56D200DF47AF = {
 						CreatedOnToolsVersion = 9.2;
@@ -830,12 +844,15 @@
 			baseConfigurationReference = BC32574FBB018C01F75E6A18 /* Pods-Readsome.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Readsome/Readsome.entitlements;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = K8WJKQA676;
 				INFOPLIST_FILE = Readsome/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = it.unisa.diem.Readsome;
+				PRODUCT_BUNDLE_IDENTIFIER = it.unisa.diem.ReadSomeAppNew;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "4e518932-a169-44dd-a83d-73cb2dbbef33";
+				PROVISIONING_PROFILE_SPECIFIER = sorgente2;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -846,12 +863,15 @@
 			baseConfigurationReference = 1A5EAC65B80E1117132DB106 /* Pods-Readsome.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Readsome/Readsome.entitlements;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = K8WJKQA676;
 				INFOPLIST_FILE = Readsome/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = it.unisa.diem.Readsome;
+				PRODUCT_BUNDLE_IDENTIFIER = it.unisa.diem.ReadSomeAppNew;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "4e518932-a169-44dd-a83d-73cb2dbbef33";
+				PROVISIONING_PROFILE_SPECIFIER = sorgente2;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
