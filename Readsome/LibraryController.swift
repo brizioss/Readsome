@@ -12,12 +12,20 @@ import Photos
 import AVFoundation
 import CoreImage
 import GPUImage
+import CloudKit
 
 
 class LibraryController : UITableViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, G8TesseractDelegate {
 
+    @IBOutlet weak var refreshList: UIBarButtonItem!
     // Stores the collection of scanned texts
     var scannedTexts : [ScannedText]?
+    
+    @IBAction func refreshList(_ sender: UIBarButtonItem) {
+        if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+            ScannedTextManager.syncWithiCloud()
+        }
+    }
     
     @IBAction func addButton(_ sender: UIBarButtonItem) {
         
@@ -125,15 +133,8 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
                 
             })
         }
-        
-        
-       
     }
     
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -212,14 +213,61 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
             
             destination.scannedText = ScannedTextManager.load(by : (tableView.indexPathForSelectedRow?.row)!)
         }
-        
-        
     }
     
 
     override func viewWillAppear(_ animated: Bool) {
-        scannedTexts = ScannedTextManager.loadAll()
+        self.scannedTexts = ScannedTextManager.loadAll()
         tableView.reloadData()
     }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setCloudKitSubscription()
+        DispatchQueue.main.async {
+            NotificationCenter.default.addObserver(self, selector: #selector(self.loadList), name: NSNotification.Name("reloadData"), object: nil)
+        }
+    }
     
+    
+    @objc func loadList(){
+        //load data here
+        print("STO AGGIORNANDO LA TABLEVIEW")
+        DispatchQueue.main.async {
+        self.tableView.reloadData()
+        }
+    }
+    
+    func setCloudKitSubscription(){
+        
+        if UserDefaults.standard.bool(forKey: "subscribed") == false {
+            
+            let predicate = NSPredicate(format: "TRUEPREDICATE")
+            
+            let subscription = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordCreation)
+            
+            let notificationInfo = CKNotificationInfo()
+            
+            notificationInfo.alertBody = "A new ScannedText was added"
+            notificationInfo.shouldBadge = true
+            
+            subscription.notificationInfo = notificationInfo
+            let privateData = CKContainer.default().privateCloudDatabase
+            privateData.save(subscription,completionHandler: ({returnRecord, error in
+                if let err = error {
+                    print("subscription failed %@",
+                          err.localizedDescription)
+                } else {
+                    DispatchQueue.main.async() {
+                        print("Success - message: Subscription set up successfully")
+                        UserDefaults.standard.set(true, forKey: "subscribed")
+                    }
+                }
+            }))
+        
+            
+    }
+}
+
+
 }

@@ -87,4 +87,21 @@ class LetterHighlightingController : UITableViewController {
         tableView.reloadData()
     }
 
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        switch section {
+        // Programmatically set the name of the section that displays all the scans
+        case 0 : return NSLocalizedString("CUSTOMIZE YOUR EXPERIENCE", comment: "String used as header of the scans section in the main screen")
+            
+        default : return ""
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        switch section {
+        // Programmatically set the name of the section that displays all the scans
+        case 0 : return NSLocalizedString("You can highlight letters by tapping the plus icon at top-right corner.", comment: "String used as footer of the scans section in the main screen")
+            
+        default : return ""
+        }
+    }
 }

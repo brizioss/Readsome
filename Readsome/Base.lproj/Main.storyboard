@@ -7,6 +7,7 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+        <capability name="Navigation items with more than one left or right bar item" minToolsVersion="7.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -112,12 +113,22 @@
                                 <segue destination="UDJ-Kn-5gs" kind="show" id="msd-gr-EQa"/>
                             </connections>
                         </barButtonItem>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="w8f-eI-VDg">
-                            <connections>
-                                <action selector="addButton:" destination="ZAz-rW-pgU" id="1P5-ck-jpd"/>
-                            </connections>
-                        </barButtonItem>
+                        <rightBarButtonItems>
+                            <barButtonItem systemItem="add" id="w8f-eI-VDg">
+                                <connections>
+                                    <action selector="addButton:" destination="ZAz-rW-pgU" id="1P5-ck-jpd"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem systemItem="refresh" id="r3P-wG-2HQ">
+                                <connections>
+                                    <action selector="refreshList:" destination="ZAz-rW-pgU" id="Neo-J8-U3t"/>
+                                </connections>
+                            </barButtonItem>
+                        </rightBarButtonItems>
                     </navigationItem>
+                    <connections>
+                        <outlet property="refreshList" destination="r3P-wG-2HQ" id="GY3-1T-6Y6"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="f52-RF-GRD" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -242,7 +253,7 @@
         <!--Settings-->
         <scene sceneID="XGu-mw-xfd">
             <objects>
-                <tableViewController title="Settings" id="UDJ-Kn-5gs" sceneMemberID="viewController">
+                <tableViewController title="Settings" id="UDJ-Kn-5gs" customClass="SettingsController" customModule="Readsome" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="GZA-8n-vup">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -358,12 +369,58 @@
                                             <segue destination="pST-i5-7q1" kind="show" id="cLI-zJ-YwN"/>
                                         </connections>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" id="Vvu-lh-4uY">
+                                        <rect key="frame" x="0.0" y="187.33333333333334" width="414" height="44"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Vvu-lh-4uY" id="HzK-Fx-NcQ">
+                                            <rect key="frame" x="0.0" y="0.0" width="414" height="43.666666666666664"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="iCloudicon" translatesAutoresizingMaskIntoConstraints="NO" id="t0J-lc-KdC">
+                                                    <rect key="frame" x="16" y="6" width="32" height="32"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="32" id="TGV-U7-3cA"/>
+                                                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="32" id="eHb-e2-edg"/>
+                                                        <constraint firstAttribute="width" constant="32" id="zmn-Fe-Ca8"/>
+                                                    </constraints>
+                                                </imageView>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="iCloud" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HTX-Ny-0xN" userLabel="iCloud">
+                                                    <rect key="frame" x="68" y="12" width="49" height="21"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                    <nil key="textColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                                <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Pq0-4e-8tT" userLabel="iCloud Switch">
+                                                    <rect key="frame" x="349" y="6.6666666666666679" width="51" height="31.000000000000004"/>
+                                                    <connections>
+                                                        <action selector="iCloudEnabled:" destination="UDJ-Kn-5gs" eventType="valueChanged" id="Pf1-KF-Fix"/>
+                                                        <action selector="weightChanged:" destination="klJ-s9-cbw" eventType="valueChanged" id="C7F-dS-Fff"/>
+                                                    </connections>
+                                                </switch>
+                                                <activityIndicatorView hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="sHO-O0-gUT">
+                                                    <rect key="frame" x="321" y="15" width="20" height="20"/>
+                                                    <color key="color" red="1" green="0.0099468241870000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                                </activityIndicatorView>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="Pq0-4e-8tT" firstAttribute="leading" secondItem="sHO-O0-gUT" secondAttribute="trailing" constant="8" id="8bL-oH-u4y"/>
+                                                <constraint firstItem="sHO-O0-gUT" firstAttribute="top" secondItem="HzK-Fx-NcQ" secondAttribute="topMargin" constant="4" id="KEn-N1-gAU"/>
+                                                <constraint firstItem="t0J-lc-KdC" firstAttribute="centerY" secondItem="HzK-Fx-NcQ" secondAttribute="centerY" id="Mnb-KZ-kHH"/>
+                                                <constraint firstItem="t0J-lc-KdC" firstAttribute="leading" secondItem="HzK-Fx-NcQ" secondAttribute="leading" constant="16" id="R0b-TN-keP"/>
+                                                <constraint firstItem="Pq0-4e-8tT" firstAttribute="top" secondItem="HzK-Fx-NcQ" secondAttribute="top" constant="6.6699999999999999" id="RgG-9C-TcR"/>
+                                                <constraint firstAttribute="bottom" secondItem="Pq0-4e-8tT" secondAttribute="bottom" constant="6" id="aDR-2H-TNG"/>
+                                                <constraint firstAttribute="trailing" secondItem="Pq0-4e-8tT" secondAttribute="trailing" constant="16" id="gts-hK-oPH"/>
+                                            </constraints>
+                                        </tableViewCellContentView>
+                                        <inset key="separatorInset" minX="62" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                    </tableViewCell>
                                 </cells>
                             </tableViewSection>
                             <tableViewSection headerTitle="Info" id="77e-Wq-ZTN">
                                 <cells>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" id="SwA-uy-Nd7">
-                                        <rect key="frame" x="0.0" y="243.33333333333334" width="414" height="44"/>
+                                        <rect key="frame" x="0.0" y="287.33333333333337" width="414" height="44"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="SwA-uy-Nd7" id="4Hs-FT-roA">
                                             <rect key="frame" x="0.0" y="0.0" width="376" height="43.666666666666664"/>
@@ -407,6 +464,10 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Settings" id="aTo-8v-jPR"/>
+                    <connections>
+                        <outlet property="iCloudIndicator" destination="sHO-O0-gUT" id="vHC-zO-Boj"/>
+                        <outlet property="iCloudSwitch" destination="Pq0-4e-8tT" id="U5U-eC-vVV"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qvA-nd-tqz" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1564,6 +1625,7 @@
         <image name="TextAppearance" width="32" height="32"/>
         <image name="TextHighlighting" width="32" height="32"/>
         <image name="TextToSpeech" width="32" height="32"/>
+        <image name="iCloudicon" width="32" height="32"/>
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="Csk-p6-4rS"/>

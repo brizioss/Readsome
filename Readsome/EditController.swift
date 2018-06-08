@@ -9,6 +9,7 @@
 import UIKit
 import TesseractOCR
 import GPUImage
+import CloudKit
 
 class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDelegate {
 
@@ -80,6 +81,19 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        
+        if !Reachability.isConnectedToNetwork(){
+            let title = NSLocalizedString("Missing Connection ", comment : "")
+            let message = NSLocalizedString("You're not able to save the item on the Cloud", comment : "")
+            
+            // Set an "OK" action for the dialog
+            let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+            alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+            
+            // Show the alert dialog
+            self.present(alert, animated : true, completion : nil)
+        }
+        
         super.viewWillAppear(animated)
         titleTextField.delegate = self
         titleTextField.returnKeyType = .done
@@ -96,8 +110,71 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
     
     @objc private func saveScannedText() {
         if let selectedTitle = titleTextField.text, let scannedText = scannedTextView.text, !selectedTitle.isEmpty, !scannedText.isEmpty {
-            ScannedTextManager.add(title : selectedTitle, text : scannedText, image : imageView.image!)
-            navigationController?.popViewController(animated: true)
+            
+            if !ScannedTextManager.doesExists(index: selectedTitle){
+                ScannedTextManager.add(title : selectedTitle, text : scannedText, image : imageView.image!)
+                navigationController?.popViewController(animated: true)
+                //
+                CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
+                    
+                    switch status {
+                    case .couldNotDetermine:
+                        print("Unkwnown error")
+                        
+                        let title = NSLocalizedString("Unknown Error", comment : "")
+                        let message = NSLocalizedString("You can't save on the Cloud", comment : "")
+                        
+                        // Set an "OK" action for the dialog
+                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+                        
+                        // Show the alert dialog
+                        self.present(alert, animated : true, completion : nil)
+                        
+                    case .available:
+                        print("Account ok")
+                    case .restricted:
+                        print("Restriction")
+                        
+                        let title = NSLocalizedString("Restriction", comment : "")
+                        let message = NSLocalizedString("There're some restrictions that can't allow you to save on the Cloud", comment : "")
+                        
+                        // Set an "OK" action for the dialog
+                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+                        
+                        // Show the alert dialog
+                        self.present(alert, animated : true, completion : nil)
+                        
+                    case .noAccount:
+                        print("No iCloud Account")
+                        
+                        let title = NSLocalizedString("No iCloud Account", comment : "")
+                        let message = NSLocalizedString("Enter a valid iCloud Account in iPhone's settings to save your library and enable the iCloud Drive option", comment : "")
+                        
+                        // Set an "OK" action for the dialog
+                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+                        
+                        // Show the alert dialog
+                        self.present(alert, animated : true, completion : nil)
+                    }
+                }
+                //
+                
+                
+            }else{
+                let title = NSLocalizedString("Change the title", comment : "")
+                let message = NSLocalizedString("The title you entered is already in use", comment : "")
+                
+                // Set an "OK" action for the dialog
+                let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+                
+                // Show the alert dialog
+                self.present(alert, animated : true, completion : nil)
+            }
+            
         } else {
             let title = NSLocalizedString("Incomplete fields", comment : "String used for the alert dialog shown when the user tries to add an empty scanned text or without a title")
             let message = NSLocalizedString("You have to select a title and keep some text in the scanned field", comment : "String presented in the alert dialog shown when the user tries to add an empty scanned text without a title.")
@@ -109,6 +186,9 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
             // Show the alert dialog
             self.present(alert, animated : true, completion : nil)
         }
+        
+        
+        
     }
     
 
@@ -160,5 +240,6 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
     func processImage(inputImage : UIImage) -> UIImage {
         return inputImage
     }
+    
 
 }

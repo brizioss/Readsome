@@ -9,16 +9,27 @@
 import UIKit
 import CoreData
 import AVFoundation
+import UserNotifications
+import CloudKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window : UIWindow?
     let preferences = UserDefaults.standard
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
+        
+        registerForPushNotifications()
+        
+//        application.registerForRemoteNotifications()
+
         if preferences.string(forKey: "font-family") == nil {
+            self.preferences.set("Times New Roman", forKey: "font-family")
+        }
+        
+        if preferences.bool(forKey: "iCloudEnabled").description == "" {
             self.preferences.set("Times New Roman", forKey: "font-family")
         }
         
@@ -65,8 +76,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("Error: unable to make audio audible in silent mode")
         }
         
+        
+      
+        
+        
         return true
     }
+    
+//
+//    func application(application: UIApplication,  didReceiveRemoteNotification userInfo: [NSObject : AnyObject],  fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+//
+//        print("Recived: \(userInfo)")
+//
+//
+//        let cloudKitNotification = CKNotification(fromRemoteNotificationDictionary: userInfo as! [String:NSObject])
+//        print("E' ENTRATO QUI 3")
+//
+//        if cloudKitNotification.notificationType == CKNotificationType.query {
+//            print("E' ENTRATO QUI 1")
+//
+//            DispatchQueue.main.async {
+//                print("E' ENTRATO QUI 2")
+//                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "performReload"), object: nil)
+//            }
+//        }
+//    }
 
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
@@ -80,6 +114,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "performReload"), object: nil)
+        }
+        
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -137,5 +176,54 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-}
+    func registerForPushNotifications() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
+            (granted, error) in
+            print("Permission granted: \(granted)")
+            
+            guard granted else { return }
+            self.getNotificationSettings()
+        }
+    }
+    
+    func getNotificationSettings() {
+        UNUserNotificationCenter.current().getNotificationSettings { (settings) in
+            print("Notification settings: \(settings)")
+            guard settings.authorizationStatus == .authorized else { return }
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    
+        let tokenParts = deviceToken.map { data -> String in
+    return String(format: "%02.2hhx", data)
+    }
+    
+    let token = tokenParts.joined()
+    print("Device Token: \(token)")
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("Failed to register: \(error)")
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        
+         DispatchQueue.main.async {
+            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+        print("userInfo \(userInfo["ck"])")
+        NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: self, userInfo: userInfo)
+        print("Notifica ricevuta!!!!!")
+        let aps = userInfo["aps"] as! [String: AnyObject]
+                if aps["content-available"] as? Int == 1 {
+                    self.saveContext()
+                    }
+        ScannedTextManager.syncWithiCloud()
+            }
+        }
+    }
 
+}

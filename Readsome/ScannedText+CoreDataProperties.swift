@@ -21,5 +21,7 @@ extension ScannedText {
     @NSManaged public var title: String?
     @NSManaged public var text: String?
     @NSManaged public var position: Int
+    @NSManaged public var iCloudRecordName: String?
+    @NSManaged public var isIniCloud: Bool
 
 }
