@@ -123,6 +123,23 @@ class ScannedTextManager {
         return scannedTexts[0]
     }
     
+    static func load(by index : String) -> ScannedText {
+        let context = getContext()
+        
+        var scannedTexts = [ScannedText]()
+        
+        let fetchRequest = NSFetchRequest<ScannedText>(entityName : name)
+        fetchRequest.predicate = NSPredicate(format : "iCloudRecordName = %@",index)
+        
+        do {
+            scannedTexts = try context.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: \(error.code)")
+        }
+        
+        return scannedTexts[0]
+    }
+    
     static func doesExists(index : String) -> Bool {
             let context = getContext()
         
@@ -179,7 +196,7 @@ class ScannedTextManager {
         let context = getContext()
         
         let scannedText = load(by : index)
-        
+        let isInCloud = scannedText.isIniCloud
         let recordName = scannedText.iCloudRecordName
         
         context.delete(scannedText)
@@ -201,10 +218,40 @@ class ScannedTextManager {
         
         
         /// Delete the item from iCloud
-        if UserDefaults.standard.bool(forKey: "iCloudEnabled") && recordName != nil{
+        if UserDefaults.standard.bool(forKey: "iCloudEnabled") && isInCloud == true {
             deleteFromiCloud(by: recordName!)
         }
     }
+    
+    
+    static func deleteInCoreDataFromNotification(by index : String) {
+        
+        if doesExists(index: index){
+         
+            let context = getContext()
+            
+            let scannedText = load(by : index)
+           
+            context.delete(scannedText)
+            
+            let fetchRequest = NSFetchRequest<ScannedText>(entityName : name)
+            fetchRequest.predicate = NSPredicate(format : "position > \(scannedText.position)")
+            
+            do {
+                let items = try context.fetch(fetchRequest)
+                
+                for item in items {
+                    item.position -= 1
+                }
+                
+                save()
+                
+            } catch let error as NSError {
+                print("Error: \(error.code)")
+            }
+        }
+        NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
+}
     
     static func deleteFromiCloud(by recordName : String){
         
@@ -290,7 +337,9 @@ class ScannedTextManager {
                 privateDatabase.perform(query, inZoneWith: nil) { (records, error) in
                     if error == nil {
                         for record in records! {
+                            print("Recordname su icloud : " + record.recordID.recordName)
                             if !doesExists(index: record.recordID.recordName){
+                                print("Recordname da aggiungere su coreData : " + record.recordID.recordName)
                                 if let asset = record.value(forKey: "image") as? CKAsset,
                                 let data = try? Data(contentsOf: asset.fileURL) {
                                     let scannedText = NSEntityDescription.insertNewObject(forEntityName : name, into : context) as! ScannedText

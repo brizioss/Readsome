@@ -23,7 +23,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         
         registerForPushNotifications()
         
-//        application.registerForRemoteNotifications()
 
         if preferences.string(forKey: "font-family") == nil {
             self.preferences.set("Times New Roman", forKey: "font-family")
@@ -116,7 +115,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
 
         DispatchQueue.main.async {
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "performReload"), object: nil)
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "reloadData"), object: nil)
         }
         
     }
@@ -211,17 +210,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        
+
          DispatchQueue.main.async {
             if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-        print("userInfo \(userInfo["ck"])")
-        NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: self, userInfo: userInfo)
-        print("Notifica ricevuta!!!!!")
-        let aps = userInfo["aps"] as! [String: AnyObject]
+                
+                let notification = CKQueryNotification(fromRemoteNotificationDictionary: userInfo as! [String : NSObject])
+                
+                if notification.queryNotificationReason == .recordCreated {
+                    
+                    let ck = userInfo["ck"] as? NSDictionary
+                    let qry = ck!["qry"] as? NSDictionary
+                    let rid = qry!["rid"] as? String
+                    
+                    print("RECORD ADDED - recordname: " + rid!)
+                    ScannedTextManager.syncWithiCloud()
+                    NotificationCenter.default.post(name: NSNotification.Name("addData"), object: self, userInfo: userInfo)
+                }
+                
+                if notification.queryNotificationReason == .recordDeleted {
+                    
+                    let ck = userInfo["ck"] as? NSDictionary
+                    let qry = ck!["qry"] as? NSDictionary
+                    let rid = qry!["rid"] as? String
+                    
+                    print("RECORD DELETED - recordname: " + rid!)
+                    ScannedTextManager.deleteInCoreDataFromNotification(by: rid!)
+                    NotificationCenter.default.post(name: NSNotification.Name("deleteData"), object: self, userInfo: userInfo )
+                }
+                
+       
+            let aps = userInfo["aps"] as! [String: AnyObject]
                 if aps["content-available"] as? Int == 1 {
                     self.saveContext()
                     }
-        ScannedTextManager.syncWithiCloud()
             }
         }
     }

@@ -192,9 +192,26 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
     // Override to support editing the table view.
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            ScannedTextManager.delete(by : indexPath.row)
             
+            ScannedTextManager.delete(by : indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
+//
+//            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+//                let title = NSLocalizedString("Deleting", comment : "")
+//                let message = NSLocalizedString("This element will be deleted from iCloud and from all of your devices", comment : "")
+//
+//                // Set an "OK" action for the dialog
+//                let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+//                alert.addAction(UIAlertAction(title: "Ok", style : .destructive, handler : {(alert: UIAlertAction!) in
+//                    ScannedTextManager.delete(by : indexPath.row)
+//                    tableView.deleteRows(at: [indexPath], with: .fade)
+//                }))
+//
+//                alert.addAction(UIAlertAction(title: "Cancel", style : .cancel, handler : nil))
+//
+//                // Show the alert dialog
+//                self.present(alert, animated : true, completion : nil)
+//            }
         }
     }
     
@@ -240,33 +257,60 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
     
     func setCloudKitSubscription(){
         
-        if UserDefaults.standard.bool(forKey: "subscribed") == false {
+        if UserDefaults.standard.bool(forKey: "subscribedOnCreation") == false {
             
             let predicate = NSPredicate(format: "TRUEPREDICATE")
             
             let subscription = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordCreation)
             
             let notificationInfo = CKNotificationInfo()
-            
+
             notificationInfo.alertBody = "A new ScannedText was added"
             notificationInfo.shouldBadge = true
             
             subscription.notificationInfo = notificationInfo
+            
             let privateData = CKContainer.default().privateCloudDatabase
+            
             privateData.save(subscription,completionHandler: ({returnRecord, error in
                 if let err = error {
-                    print("subscription failed %@",
-                          err.localizedDescription)
+                    print("Subscription On creation failed %@", err.localizedDescription)
                 } else {
                     DispatchQueue.main.async() {
-                        print("Success - message: Subscription set up successfully")
-                        UserDefaults.standard.set(true, forKey: "subscribed")
+                        print("Success - message: Subscription On Creation set up successfully")
+                        UserDefaults.standard.set(true, forKey: "subscribedOnCreation")
                     }
                 }
             }))
+        }
         
+        if UserDefaults.standard.bool(forKey: "subscribedOnDeletion") == false {
+
+            let predicate = NSPredicate(format: "TRUEPREDICATE")
             
-    }
+            let subscription2 = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordDeletion)
+            let notificationInfo2 = CKNotificationInfo()
+
+            notificationInfo2.alertBody = "A new ScannedText was deleted"
+            notificationInfo2.shouldBadge = true
+            
+            subscription2.notificationInfo = notificationInfo2
+
+            let privateData = CKContainer.default().privateCloudDatabase
+            
+            privateData.save(subscription2,completionHandler: ({returnRecord2, error2 in
+                if let err = error2 {
+                    print("Subscription On Deletion failed %@", err.localizedDescription)
+                } else {
+                    DispatchQueue.main.async() {
+                        print("Success - message: Subscription On Deletion set up successfully")
+                        UserDefaults.standard.set(true, forKey: "subscribedOnDeletion")
+                    }
+                }
+            }))
+        }
+            
+    
 }
 
 
