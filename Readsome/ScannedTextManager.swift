@@ -178,8 +178,6 @@ class ScannedTextManager {
                             temp = true
                         }
                         group.leave()
-                        print("******+  LA QUERY HA PRODOTTO "+String(temp) + " COME RISULTATO PER IL RECORDNAME "+recordName)
-                        
                     })
                 }
             }
@@ -188,7 +186,7 @@ class ScannedTextManager {
         // wait ...
         group.wait()
         
-        // ... and return as soon as "a" has a value
+        // ... and return as soon as "temp" has a value
         return temp
     }
     
@@ -315,13 +313,16 @@ class ScannedTextManager {
         }
         
         for scannedText in scannedTexts {
+            
             if scannedText.iCloudRecordName == nil{
+//                in this case the item has not been added to iCloud
                 addToiCloud(title: scannedText.title!, text: scannedText.text!, image: UIImage(data:scannedText.image! as Data)!, scannedText: scannedText)
                 print("Record con RECORDNAME NIL aggiunto su iCloud : nil")
-            }else if !scannedText.isIniCloud && !doesExistsIniCloud(recordName: scannedText.iCloudRecordName!){
-                    addToiCloud(title: scannedText.title!, text: scannedText.text!, image: UIImage(data:scannedText.image! as Data)!, scannedText: scannedText)
-                    print("Record con RECORDNAME DIVERSO DA NIL aggiunto su iCloud : " + String(scannedText.iCloudRecordName!))
+            }else if !doesExistsIniCloud(recordName: scannedText.iCloudRecordName!){
+//                in this case the item is marked to delete from CoreData
+                deleteInCoreDataFromNotification(by: scannedText.iCloudRecordName!)
                 }else{
+//                in this case the item is in iCloud and in CoreData
                 print("Record con RECORDNAME GIA' AGGIUNTO IN PRECEDENZA non aggiunto su iCloud : " + String(scannedText.iCloudRecordName!))
                 scannedText.isIniCloud = true
                 }
@@ -350,11 +351,11 @@ class ScannedTextManager {
                                     scannedText.isIniCloud = true
                                     scannedText.iCloudRecordName = record.recordID.recordName
                                     save()
-                                    NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
                                     print("Record aggiunto sul CoreData : " + scannedText.iCloudRecordName!)
                                 }
                             }
                         }
+                        NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
                     }
                 }
             }

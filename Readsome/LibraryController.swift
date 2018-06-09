@@ -17,13 +17,20 @@ import CloudKit
 
 class LibraryController : UITableViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, G8TesseractDelegate {
 
+    @IBOutlet weak var settingsButton: UIBarButtonItem!
+    @IBOutlet weak var addButton: UIBarButtonItem!
     @IBOutlet weak var refreshList: UIBarButtonItem!
     // Stores the collection of scanned texts
     var scannedTexts : [ScannedText]?
     
     @IBAction func refreshList(_ sender: UIBarButtonItem) {
         if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+            
+                self.settingsButton.isEnabled = false
+                self.refreshList.isEnabled = false
+                self.addButton.isEnabled = false
             ScannedTextManager.syncWithiCloud()
+           
         }
     }
     
@@ -192,26 +199,22 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
     // Override to support editing the table view.
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            
-            ScannedTextManager.delete(by : indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .fade)
-//
-//            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-//                let title = NSLocalizedString("Deleting", comment : "")
-//                let message = NSLocalizedString("This element will be deleted from iCloud and from all of your devices", comment : "")
-//
-//                // Set an "OK" action for the dialog
-//                let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-//                alert.addAction(UIAlertAction(title: "Ok", style : .destructive, handler : {(alert: UIAlertAction!) in
-//                    ScannedTextManager.delete(by : indexPath.row)
-//                    tableView.deleteRows(at: [indexPath], with: .fade)
-//                }))
-//
-//                alert.addAction(UIAlertAction(title: "Cancel", style : .cancel, handler : nil))
-//
-//                // Show the alert dialog
-//                self.present(alert, animated : true, completion : nil)
-//            }
+            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+                let title = NSLocalizedString("Deleting", comment : "")
+                let message = NSLocalizedString("This element will be deleted from iCloud and from all of your devices", comment : "")
+
+                // Set an "OK" action for the dialog
+                let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style : .destructive, handler : {(alert: UIAlertAction!) in
+                    ScannedTextManager.delete(by : indexPath.row)
+                    tableView.deleteRows(at: [indexPath], with: .fade)
+                }))
+
+                alert.addAction(UIAlertAction(title: "Cancel", style : .cancel, handler : nil))
+
+                // Show the alert dialog
+                self.present(alert, animated : true, completion : nil)
+            }
         }
     }
     
@@ -251,7 +254,10 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
         //load data here
         print("STO AGGIORNANDO LA TABLEVIEW")
         DispatchQueue.main.async {
-        self.tableView.reloadData()
+            self.tableView.reloadData()
+            self.settingsButton.isEnabled = true
+            self.refreshList.isEnabled = true
+            self.addButton.isEnabled = true
         }
     }
     
@@ -265,8 +271,7 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
             
             let notificationInfo = CKNotificationInfo()
 
-            notificationInfo.alertBody = "A new ScannedText was added"
-            notificationInfo.shouldBadge = true
+            notificationInfo.alertBody = "A new item has been added"
             
             subscription.notificationInfo = notificationInfo
             
@@ -276,38 +281,38 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
                 if let err = error {
                     print("Subscription On creation failed %@", err.localizedDescription)
                 } else {
-                    DispatchQueue.main.async() {
                         print("Success - message: Subscription On Creation set up successfully")
                         UserDefaults.standard.set(true, forKey: "subscribedOnCreation")
-                    }
                 }
             }))
         }
         
         if UserDefaults.standard.bool(forKey: "subscribedOnDeletion") == false {
 
-            let predicate = NSPredicate(format: "TRUEPREDICATE")
-            
-            let subscription2 = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordDeletion)
-            let notificationInfo2 = CKNotificationInfo()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
 
-            notificationInfo2.alertBody = "A new ScannedText was deleted"
-            notificationInfo2.shouldBadge = true
-            
-            subscription2.notificationInfo = notificationInfo2
-
-            let privateData = CKContainer.default().privateCloudDatabase
-            
-            privateData.save(subscription2,completionHandler: ({returnRecord2, error2 in
-                if let err = error2 {
-                    print("Subscription On Deletion failed %@", err.localizedDescription)
-                } else {
-                    DispatchQueue.main.async() {
+                let predicate = NSPredicate(format: "TRUEPREDICATE")
+                
+                let subscription2 = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordDeletion)
+                let notificationInfo2 = CKNotificationInfo()
+                
+                notificationInfo2.alertBody = "An item has been deleted"
+                
+                subscription2.notificationInfo = notificationInfo2
+                
+                let privateData = CKContainer.default().privateCloudDatabase
+                
+                privateData.save(subscription2,completionHandler: ({returnRecord2, error2 in
+                    if let err = error2 {
+                        print("Subscription On Deletion failed %@", err.localizedDescription)
+                    } else {
                         print("Success - message: Subscription On Deletion set up successfully")
                         UserDefaults.standard.set(true, forKey: "subscribedOnDeletion")
                     }
-                }
-            }))
+                }))
+                
+            })
+            
         }
             
     

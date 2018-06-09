@@ -127,7 +127,9 @@
                         </rightBarButtonItems>
                     </navigationItem>
                     <connections>
+                        <outlet property="addButton" destination="w8f-eI-VDg" id="aFk-R4-fvA"/>
                         <outlet property="refreshList" destination="r3P-wG-2HQ" id="GY3-1T-6Y6"/>
+                        <outlet property="settingsButton" destination="ecJ-a6-MJA" id="5iR-BL-wH5"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="f52-RF-GRD" userLabel="First Responder" sceneMemberID="firstResponder"/>

@@ -115,7 +115,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
 
         DispatchQueue.main.async {
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "reloadData"), object: nil)
+            NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
+            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+                ScannedTextManager.syncWithiCloud()
+            }
         }
         
     }
