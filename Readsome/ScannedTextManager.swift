@@ -51,8 +51,7 @@ class ScannedTextManager {
     }
     
     static func addToiCloud(title : String, text : String, image : UIImage, scannedText : ScannedText){
-        CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
-            if status == .available{
+            if self.iCloudChecker(){
                 
                 let CloudScannedText = CKRecord(recordType: "ScannedText")
                 
@@ -84,13 +83,42 @@ class ScannedTextManager {
                         print(String(describing: error))
                     }else{
                         print("Record aggiunto su iCloud con recordName = " + scannedText.iCloudRecordName!)
+                        scannedText.isIniCloud = true
                     }
                 }
             }
-        }
-        scannedText.isIniCloud = true
-        
     }
+    
+    
+    static func addInCoreDataFromNotification(by recordName : String){
+        
+            if self.iCloudChecker(){
+                let privateDatabase = CKContainer.default().privateCloudDatabase
+                
+                privateDatabase.fetch(withRecordID: CKRecordID(recordName: recordName), completionHandler: {record, error in
+                    if(record?.recordID.recordName == nil){
+                        print("element to add in core data not found in iCloud")
+                    }else{
+                            let context = getContext()
+                            let scannedText = NSEntityDescription.insertNewObject(forEntityName : name, into : context) as! ScannedText
+                            if let asset = record?.value(forKey: "image") as? CKAsset,
+                            let data = try? Data(contentsOf: asset.fileURL) {
+                            scannedText.title = record?.value(forKey: "title") as! String
+                            scannedText.text = record?.value(forKey: "text") as! String
+                            scannedText.image =  UIImageJPEGRepresentation(UIImage(data: data)!, CGFloat(0.25)) as NSData?
+                            scannedText.position = loadAll().count-1
+                            scannedText.isIniCloud = true
+                            scannedText.iCloudRecordName = record?.recordID.recordName
+                            save()
+                            print("Saved :::::::  " + scannedText.title! + " " + String(scannedText.position))
+                            NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
+                    }
+                    }
+                })
+                
+        }
+    }
+
     
     static func loadAll() -> [ScannedText] {
         let context = getContext()
@@ -119,7 +147,6 @@ class ScannedTextManager {
         } catch let error as NSError {
             print("Error: \(error.code)")
         }
-        
         return scannedTexts[0]
     }
     
@@ -139,6 +166,7 @@ class ScannedTextManager {
         
         return scannedTexts[0]
     }
+    
     
     static func doesExists(index : String) -> Bool {
             let context = getContext()
@@ -167,8 +195,7 @@ class ScannedTextManager {
         // avoid deadlocks by not using .main queue here
         DispatchQueue.global(qos: .default).async{
 
-            CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
-                if status == .available{
+                if self.iCloudChecker(){
                     let privateDatabase = CKContainer.default().privateCloudDatabase
                     
                     privateDatabase.fetch(withRecordID: CKRecordID(recordName: recordName), completionHandler: {record, error in
@@ -179,7 +206,8 @@ class ScannedTextManager {
                         }
                         group.leave()
                     })
-                }
+                }else{
+                    print("Can't access to iCloud")
             }
         }
         
@@ -227,9 +255,7 @@ class ScannedTextManager {
         if doesExists(index: index){
          
             let context = getContext()
-            
             let scannedText = load(by : index)
-           
             context.delete(scannedText)
             
             let fetchRequest = NSFetchRequest<ScannedText>(entityName : name)
@@ -237,7 +263,6 @@ class ScannedTextManager {
             
             do {
                 let items = try context.fetch(fetchRequest)
-                
                 for item in items {
                     item.position -= 1
                 }
@@ -251,10 +276,9 @@ class ScannedTextManager {
         NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
 }
     
+    
     static func deleteFromiCloud(by recordName : String){
-        
-        CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
-            if status == .available{
+            if self.iCloudChecker(){
                 let privateDatabase = CKContainer.default().privateCloudDatabase
                 privateDatabase.delete(withRecordID: CKRecordID(recordName: recordName), completionHandler: {recordID, error in
                     if error != nil{
@@ -262,8 +286,6 @@ class ScannedTextManager {
                     }
                 })
             }
-        }
-        
     }
     
     static func move(from : Int, to : Int) {
@@ -329,8 +351,7 @@ class ScannedTextManager {
         }
         
         
-        CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
-            if status == .available{
+            if self.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
                 let privateDatabase = CKContainer.default().privateCloudDatabase
                 
                 let query = CKQuery(recordType: "ScannedText", predicate: NSPredicate(format: "TRUEPREDICATE"))
@@ -358,8 +379,10 @@ class ScannedTextManager {
                         NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
                     }
                 }
-            }
+            }else{
+                print("Can't access iCloud")
         }
+        
         
         
     }
@@ -406,6 +429,43 @@ class ScannedTextManager {
         }
     }
     
+    static func iCloudChecker() -> Bool{
+        
+        var available = false
+    
+        if !Reachability.isConnectedToNetwork(){
+            UserDefaults.standard.set(false, forKey: "iCloudEnabled")
+            available = false
+//            print("Unavailable")
+        }else{
+            let group = DispatchGroup()
+            group.enter()
+            // avoid deadlocks by not using .main queue here
+            DispatchQueue.global(qos: .default).async{
+            
+            CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
+                if error == nil{
+                    if status != .available{
+                        UserDefaults.standard.set(false, forKey: "iCloudEnabled")
+                        available = false
+//                        print("Unavailable")
+                    }else{
+                        UserDefaults.standard.set(UserDefaults.standard.bool(forKey: "iCloudEnabled"), forKey: "iCloudEnabled")
+                        available = true
+//                        print("Available")
+                    }
+                }else{
+                    print(error as Any)
+                }
+                group.leave()
+            }
+        }
+        
+        // wait ...
+        group.wait()
+        }
+        // ... and return as soon as "temp" has a value
+        return available
+        }
+
 }
-
-

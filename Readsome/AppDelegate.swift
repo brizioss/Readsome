@@ -21,7 +21,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         
-        registerForPushNotifications()
+        application.registerForRemoteNotifications()
+
         
 
         if preferences.string(forKey: "font-family") == nil {
@@ -114,13 +115,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
 
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
-            if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+            DispatchQueue.main.async {
                 ScannedTextManager.syncWithiCloud()
+                NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
             }
         }
-        
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -178,25 +178,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         }
     }
 
-    func registerForPushNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
-            (granted, error) in
-            print("Permission granted: \(granted)")
-            
-            guard granted else { return }
-            self.getNotificationSettings()
-        }
-    }
+//    func registerForPushNotifications() {
+//        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
+//            (granted, error) in
+//            print("Permission granted: \(granted)")
+//
+//            guard granted else { return }
+//            self.getNotificationSettings()
+//        }
+//    }
     
-    func getNotificationSettings() {
-        UNUserNotificationCenter.current().getNotificationSettings { (settings) in
-            print("Notification settings: \(settings)")
-            guard settings.authorizationStatus == .authorized else { return }
-            DispatchQueue.main.async {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
-        }
-    }
+//    func getNotificationSettings() {
+//        UNUserNotificationCenter.current().getNotificationSettings { (settings) in
+//            print("Notification settings: \(settings)")
+//            guard settings.authorizationStatus == .authorized else { return }
+//            DispatchQueue.main.async {
+//                UIApplication.shared.registerForRemoteNotifications()
+//            }
+//        }
+//    }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
     
@@ -213,7 +213,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-
+        print("\nUSERINFO : \(userInfo)\n")
          DispatchQueue.main.async {
             if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
                 
@@ -221,13 +221,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                 
                 if notification.queryNotificationReason == .recordCreated {
                     
+                    
                     let ck = userInfo["ck"] as? NSDictionary
                     let qry = ck!["qry"] as? NSDictionary
                     let rid = qry!["rid"] as? String
                     
                     print("RECORD ADDED - recordname: " + rid!)
-                    ScannedTextManager.syncWithiCloud()
-                    NotificationCenter.default.post(name: NSNotification.Name("addData"), object: self, userInfo: userInfo)
+                    ScannedTextManager.addInCoreDataFromNotification(by: rid!)
+//                    ScannedTextManager.syncWithiCloud()
                 }
                 
                 if notification.queryNotificationReason == .recordDeleted {
@@ -238,7 +239,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                     
                     print("RECORD DELETED - recordname: " + rid!)
                     ScannedTextManager.deleteInCoreDataFromNotification(by: rid!)
-                    NotificationCenter.default.post(name: NSNotification.Name("deleteData"), object: self, userInfo: userInfo )
                 }
                 
        

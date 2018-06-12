@@ -82,9 +82,9 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
     
     override func viewWillAppear(_ animated: Bool) {
         
-        if !Reachability.isConnectedToNetwork(){
-            let title = NSLocalizedString("Missing Connection ", comment : "")
-            let message = NSLocalizedString("You're not able to save the item on the Cloud", comment : "")
+        if !ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+            let title = NSLocalizedString("Something went wrong... ", comment : "")
+            let message = NSLocalizedString("You are not able to save the item on the Cloud. Check the settings page", comment : "")
             
             // Set an "OK" action for the dialog
             let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
@@ -114,7 +114,7 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
             if !ScannedTextManager.doesExists(index: selectedTitle){
                 ScannedTextManager.add(title : selectedTitle, text : scannedText, image : imageView.image!)
                 navigationController?.popViewController(animated: true)
-                //
+                
                 CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
                     
                     switch status {
@@ -137,7 +137,7 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
                         print("Restriction")
                         
                         let title = NSLocalizedString("Restriction", comment : "")
-                        let message = NSLocalizedString("There're some restrictions that can't allow you to save on the Cloud", comment : "")
+                        let message = NSLocalizedString("There are some restrictions that can't allow you to save on the Cloud", comment : "")
                         
                         // Set an "OK" action for the dialog
                         let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)

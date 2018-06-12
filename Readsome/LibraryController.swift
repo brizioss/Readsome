@@ -22,15 +22,26 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
     @IBOutlet weak var refreshList: UIBarButtonItem!
     // Stores the collection of scanned texts
     var scannedTexts : [ScannedText]?
+    let uiBusy = UIActivityIndicatorView(activityIndicatorStyle: .white)
     
     @IBAction func refreshList(_ sender: UIBarButtonItem) {
-        if UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-            
-                self.settingsButton.isEnabled = false
-                self.refreshList.isEnabled = false
-                self.addButton.isEnabled = false
+        uiBusy.startAnimating()
+        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+    
+            self.refreshList.isEnabled = false
+            self.settingsButton.isEnabled = false
+            self.addButton.isEnabled = false
             ScannedTextManager.syncWithiCloud()
-           
+        }else{
+            let title = NSLocalizedString("iCloud", comment : "")
+            let message = NSLocalizedString("Enable iCloud in the settings page to synchronize your library", comment : "")
+            
+            // Set an "OK" action for the dialog
+            let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+            alert.addAction(UIAlertAction(title: "Ok", style : .cancel, handler : nil))
+            
+            // Show the alert dialog
+            self.present(alert, animated : true, completion : nil)
         }
     }
     
@@ -214,6 +225,9 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
 
                 // Show the alert dialog
                 self.present(alert, animated : true, completion : nil)
+            }else{
+                ScannedTextManager.delete(by : indexPath.row)
+                tableView.deleteRows(at: [indexPath], with: .fade)
             }
         }
     }
@@ -243,7 +257,12 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setCloudKitSubscription()
+        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+            ScannedTextManager.syncWithiCloud()
+        }
+        uiBusy.hidesWhenStopped = true
+        let barButton = UIBarButtonItem.init(customView: uiBusy)
+        self.navigationItem.rightBarButtonItems?.append(barButton)
         DispatchQueue.main.async {
             NotificationCenter.default.addObserver(self, selector: #selector(self.loadList), name: NSNotification.Name("reloadData"), object: nil)
         }
@@ -255,68 +274,11 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
         print("STO AGGIORNANDO LA TABLEVIEW")
         DispatchQueue.main.async {
             self.tableView.reloadData()
-            self.settingsButton.isEnabled = true
             self.refreshList.isEnabled = true
+            self.settingsButton.isEnabled = true
             self.addButton.isEnabled = true
+            self.uiBusy.stopAnimating()
         }
     }
-    
-    func setCloudKitSubscription(){
-        
-        if UserDefaults.standard.bool(forKey: "subscribedOnCreation") == false {
-            
-            let predicate = NSPredicate(format: "TRUEPREDICATE")
-            
-            let subscription = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordCreation)
-            
-            let notificationInfo = CKNotificationInfo()
-
-            notificationInfo.alertBody = "A new item has been added"
-            
-            subscription.notificationInfo = notificationInfo
-            
-            let privateData = CKContainer.default().privateCloudDatabase
-            
-            privateData.save(subscription,completionHandler: ({returnRecord, error in
-                if let err = error {
-                    print("Subscription On creation failed %@", err.localizedDescription)
-                } else {
-                        print("Success - message: Subscription On Creation set up successfully")
-                        UserDefaults.standard.set(true, forKey: "subscribedOnCreation")
-                }
-            }))
-        }
-        
-        if UserDefaults.standard.bool(forKey: "subscribedOnDeletion") == false {
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-
-                let predicate = NSPredicate(format: "TRUEPREDICATE")
-                
-                let subscription2 = CKQuerySubscription(recordType: "ScannedText",predicate: predicate,options: .firesOnRecordDeletion)
-                let notificationInfo2 = CKNotificationInfo()
-                
-                notificationInfo2.alertBody = "An item has been deleted"
-                
-                subscription2.notificationInfo = notificationInfo2
-                
-                let privateData = CKContainer.default().privateCloudDatabase
-                
-                privateData.save(subscription2,completionHandler: ({returnRecord2, error2 in
-                    if let err = error2 {
-                        print("Subscription On Deletion failed %@", err.localizedDescription)
-                    } else {
-                        print("Success - message: Subscription On Deletion set up successfully")
-                        UserDefaults.standard.set(true, forKey: "subscribedOnDeletion")
-                    }
-                }))
-                
-            })
-            
-        }
-            
-    
-}
-
 
 }
