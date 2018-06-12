@@ -115,12 +115,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
 
-        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-            DispatchQueue.main.async {
-                ScannedTextManager.syncWithiCloud()
-                NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
-            }
-        }
+//        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+//            DispatchQueue.main.async {
+//                ScannedTextManager.syncWithiCloud()
+//                NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
+//            }
+//        }
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {

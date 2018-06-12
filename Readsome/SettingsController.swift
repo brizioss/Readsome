@@ -17,22 +17,29 @@ class SettingsController: UITableViewController {
     let preferences = UserDefaults.standard
     
     @IBAction func iCloudEnabled(_ sender: UISwitch) {
-    
+        
+            self.iCloudIndicator.startAnimating()
+            sender.isEnabled = false
         if ScannedTextManager.iCloudChecker() {
-                                        self.iCloudIndicator.startAnimating()
-                                        self.iCloudIndicator.isHidden = false
-                                        sender.isEnabled = false
-
+            
                                         if sender.isOn {
-                                            self.preferences.set(true, forKey: "iCloudEnabled")
+                                            
+                                            DispatchQueue.global(qos: .userInitiated).async {
+                                                self.preferences.set(true, forKey: "iCloudEnabled")
+                                                self.preferences.set(true, forKey: "syncing")
+                                                if !UserDefaults.standard.bool(forKey: "subscribed"){
+                                                    self.setCloudKitSubscription()
+                                                }
                                             
 //                                            if !NSUbiquitousKeyValueStore.default.bool(forKey: "subscribed"){
 //                                                self.setCloudKitSubscription()
 //                                            }
                                             
-                                            if !UserDefaults.standard.bool(forKey: "subscribed"){
-                                                self.setCloudKitSubscription()
+                                                ScannedTextManager.syncWithiCloud()
+
+                                                //Coming back to the main queue to update the UI
                                             }
+                                            print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
                                             
                                             //////////////////////////////////////// TO DO
 //                                            if ScannedTextManager.loadAll().count > 0 {
@@ -72,14 +79,6 @@ class SettingsController: UITableViewController {
 //                                            }
                                             ///////////////////////////////////////////////// TO DO
 
-                                            
-                                            
-                                            
-                                            
-                                            ScannedTextManager.syncWithiCloud()
-                                            self.iCloudIndicator.stopAnimating()
-                                            sender.isEnabled = true
-                                            print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
                                         }else{
                                             self.preferences.set(false ,forKey: "iCloudEnabled")
                                             let title = NSLocalizedString("Deleting", comment : "")
@@ -88,27 +87,21 @@ class SettingsController: UITableViewController {
                                             // Set an "OK" action for the dialog
                                             let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
                                             alert.addAction(UIAlertAction(title: "Yes", style : .destructive, handler : {(alert: UIAlertAction!) in
-                                                self.iCloudIndicator.startAnimating()
                                                 ScannedTextManager.deleteAllFromiCloud()
                                                 ScannedTextManager.desyncWithiCloud()
-                                                self.iCloudIndicator.stopAnimating()
-                                                sender.isEnabled = true
+                                                
                                                 print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
                                             }))
                                             alert.addAction(UIAlertAction(title: "No", style : .default, handler : {(alert: UIAlertAction!) in
-                                                self.iCloudIndicator.startAnimating()
                                                 ScannedTextManager.desyncWithiCloud()
-                                                self.iCloudIndicator.stopAnimating()
-                                                sender.isEnabled = true
+                                                
                                                 print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
                                             }))
 
                                             alert.addAction(UIAlertAction(title: "Cancel", style : .cancel, handler : {(alert: UIAlertAction!) in
-                                                self.iCloudIndicator.startAnimating()
                                                 self.preferences.set(true, forKey: "iCloudEnabled")
                                                 self.iCloudSwitch.setOn(true, animated: true)
-                                                self.iCloudIndicator.stopAnimating()
-                                                sender.isEnabled = true
+                                                self.stopAnimating()
                                                 print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
                                             }))
 
@@ -123,6 +116,7 @@ class SettingsController: UITableViewController {
             let alert2 = UIAlertController(title : title2, message : message2, preferredStyle : .alert)
             alert2.addAction(UIAlertAction(title: "Ok", style : .cancel, handler : {(alert: UIAlertAction!) in
                 self.iCloudSwitch.setOn(false, animated: false)
+                self.stopAnimating()
                 print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
             }))
 
@@ -133,6 +127,11 @@ class SettingsController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        DispatchQueue.main.async {
+            self.iCloudIndicator.hidesWhenStopped = true
+            NotificationCenter.default.addObserver(self, selector: #selector(self.stopAnimating), name: NSNotification.Name("stopIndicator"), object: nil)
+        }
+        
         if ScannedTextManager.iCloudChecker(){
             DispatchQueue.main.async {
                 self.iCloudSwitch.setOn(self.preferences.bool(forKey: "iCloudEnabled"), animated: true)
@@ -147,6 +146,11 @@ class SettingsController: UITableViewController {
 
     override func viewWillAppear(_ animated: Bool){
         
+        if self.preferences.bool(forKey: "syncing"){
+            iCloudIndicator.startAnimating()
+            iCloudSwitch.isEnabled = false
+        }
+        
         if ScannedTextManager.iCloudChecker(){
             DispatchQueue.main.async {
                 self.iCloudSwitch.setOn(self.preferences.bool(forKey: "iCloudEnabled"), animated: true)
@@ -157,7 +161,6 @@ class SettingsController: UITableViewController {
                 self.iCloudSwitch.setOn(false, animated: false)
             }
         }
-        print("iCloud enabled: "  + String(self.preferences.bool(forKey: "iCloudEnabled")))
     }
     
     func setCloudKitSubscription(){
@@ -184,6 +187,13 @@ class SettingsController: UITableViewController {
             }))
     }
     
+    
+    @objc func stopAnimating(){
+        DispatchQueue.main.async{
+            self.iCloudSwitch.isEnabled = true
+            self.iCloudIndicator.stopAnimating()
+        }
+    }
     
     
     //    func setCloudKitSubscription(){

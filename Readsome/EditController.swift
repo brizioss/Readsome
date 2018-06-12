@@ -112,64 +112,29 @@ class EditController : UITableViewController, UITextFieldDelegate, G8TesseractDe
         if let selectedTitle = titleTextField.text, let scannedText = scannedTextView.text, !selectedTitle.isEmpty, !scannedText.isEmpty {
             
             if !ScannedTextManager.doesExists(index: selectedTitle){
-                ScannedTextManager.add(title : selectedTitle, text : scannedText, image : imageView.image!)
+                ScannedTextManager.add(title : selectedTitle, text : scannedText, image : self.imageView.image!)
                 navigationController?.popViewController(animated: true)
                 
-                CKContainer.default().accountStatus{(status:CKAccountStatus,error:Error?) in
+                if !ScannedTextManager.iCloudChecker() {
+                    print("Unkwnown error")
                     
-                    switch status {
-                    case .couldNotDetermine:
-                        print("Unkwnown error")
-                        
-                        let title = NSLocalizedString("Unknown Error", comment : "")
-                        let message = NSLocalizedString("You can't save on the Cloud", comment : "")
-                        
-                        // Set an "OK" action for the dialog
-                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
-                        
-                        // Show the alert dialog
-                        self.present(alert, animated : true, completion : nil)
-                        
-                    case .available:
-                        print("Account ok")
-                    case .restricted:
-                        print("Restriction")
-                        
-                        let title = NSLocalizedString("Restriction", comment : "")
-                        let message = NSLocalizedString("There are some restrictions that can't allow you to save on the Cloud", comment : "")
-                        
-                        // Set an "OK" action for the dialog
-                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
-                        
-                        // Show the alert dialog
-                        self.present(alert, animated : true, completion : nil)
-                        
-                    case .noAccount:
-                        print("No iCloud Account")
-                        
-                        let title = NSLocalizedString("No iCloud Account", comment : "")
-                        let message = NSLocalizedString("Enter a valid iCloud Account in iPhone's settings to save your library and enable the iCloud Drive option", comment : "")
-                        
-                        // Set an "OK" action for the dialog
-                        let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
-                        
-                        // Show the alert dialog
-                        self.present(alert, animated : true, completion : nil)
-                    }
+                    let title = NSLocalizedString("Error", comment : "")
+                    let message = NSLocalizedString("You can't save on the Cloud", comment : "")
+                    
+                    // Set an "OK" action for the dialog
+                    let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
+                    alert.addAction(UIAlertAction(title: "Ok", style : .default, handler : nil))
+                    
+                    // Show the alert dialog
+                    self.present(alert, animated : true, completion : nil)
                 }
-                //
-                
-                
             }else{
                 let title = NSLocalizedString("Change the title", comment : "")
                 let message = NSLocalizedString("The title you entered is already in use", comment : "")
                 
                 // Set an "OK" action for the dialog
                 let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-                alert.addAction(UIAlertAction(title: "OK", style : .default, handler : nil))
+                alert.addAction(UIAlertAction(title: "Ok", style : .default, handler : nil))
                 
                 // Show the alert dialog
                 self.present(alert, animated : true, completion : nil)

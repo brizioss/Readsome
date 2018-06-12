@@ -376,7 +376,9 @@ class ScannedTextManager {
                                 }
                             }
                         }
+                        UserDefaults.standard.set(false, forKey: "syncing")
                         NotificationCenter.default.post(name: NSNotification.Name("reloadData"), object: nil)
+                        NotificationCenter.default.post(name: NSNotification.Name("stopIndicator"), object: nil)
                     }
                 }
             }else{
@@ -406,6 +408,7 @@ class ScannedTextManager {
                 scannedText.isIniCloud = false
             }
         }
+        NotificationCenter.default.post(name: NSNotification.Name("stopIndicator"), object: nil)
     }
     
     static func deleteAllFromiCloud() -> Void{

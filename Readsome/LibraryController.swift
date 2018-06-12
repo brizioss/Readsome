@@ -19,31 +19,32 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
 
     @IBOutlet weak var settingsButton: UIBarButtonItem!
     @IBOutlet weak var addButton: UIBarButtonItem!
-    @IBOutlet weak var refreshList: UIBarButtonItem!
+
     // Stores the collection of scanned texts
     var scannedTexts : [ScannedText]?
-    let uiBusy = UIActivityIndicatorView(activityIndicatorStyle: .white)
     
-    @IBAction func refreshList(_ sender: UIBarButtonItem) {
-        uiBusy.startAnimating()
+    @objc func refreshList() {
         if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-    
-            self.refreshList.isEnabled = false
             self.settingsButton.isEnabled = false
             self.addButton.isEnabled = false
+            DispatchQueue.global(qos: .utility).async {
             ScannedTextManager.syncWithiCloud()
+            }
         }else{
             let title = NSLocalizedString("iCloud", comment : "")
             let message = NSLocalizedString("Enable iCloud in the settings page to synchronize your library", comment : "")
             
             // Set an "OK" action for the dialog
             let alert = UIAlertController(title : title, message : message, preferredStyle : .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style : .cancel, handler : nil))
+            alert.addAction(UIAlertAction(title: "Ok", style : .cancel, handler : {(alert: UIAlertAction!) in
+                self.refreshControl?.endRefreshing()
+            }))
             
             // Show the alert dialog
             self.present(alert, animated : true, completion : nil)
         }
     }
+    
     
     @IBAction func addButton(_ sender: UIBarButtonItem) {
         
@@ -252,32 +253,32 @@ class LibraryController : UITableViewController, UIImagePickerControllerDelegate
 
     override func viewWillAppear(_ animated: Bool) {
         self.scannedTexts = ScannedTextManager.loadAll()
-        tableView.reloadData()
+        tableView.reloadData()        
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
-            ScannedTextManager.syncWithiCloud()
-        }
-        uiBusy.hidesWhenStopped = true
-        let barButton = UIBarButtonItem.init(customView: uiBusy)
-        self.navigationItem.rightBarButtonItems?.append(barButton)
+//        if ScannedTextManager.iCloudChecker() && UserDefaults.standard.bool(forKey: "iCloudEnabled"){
+//            ScannedTextManager.syncWithiCloud()
+//        }
         DispatchQueue.main.async {
             NotificationCenter.default.addObserver(self, selector: #selector(self.loadList), name: NSNotification.Name("reloadData"), object: nil)
         }
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = .white
+        refreshControl.addTarget(self, action:  #selector(self.refreshList), for: UIControlEvents.valueChanged)
+        self.refreshControl = refreshControl
     }
     
     
     @objc func loadList(){
         //load data here
-        print("STO AGGIORNANDO LA TABLEVIEW")
         DispatchQueue.main.async {
+            print("STO AGGIORNANDO LA TABLEVIEW")
             self.tableView.reloadData()
-            self.refreshList.isEnabled = true
             self.settingsButton.isEnabled = true
             self.addButton.isEnabled = true
-            self.uiBusy.stopAnimating()
+            self.refreshControl?.endRefreshing()
         }
     }
 
